@@ -1,0 +1,10 @@
+dist: xenial
+language: cpp
+
+addons:
+  apt:
+    update: true
+
+script:
+  - ./Tests/Pipeline/Prepare.sh
+  - ./Tests/Pipeline/Build.sh
