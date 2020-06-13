@@ -104,13 +104,13 @@ except Exception:
 }
 function run() {
 	LANG=$2
-	PLAYLIST=$3
+	PLAYLIST=$4
 
 	if [[ ${#COOKIES} -ne 0 ]]; then
 		RUN_TEMPFILE=$(mktemp /tmp/hackerrank_run.XXXXXX)
 
 		cat > $RUN_TEMPFILE << EOF
-curl -sS 'https://www.hackerrank.com/rest/contests/master/challenges/$4/compile_tests'	\
+curl -sS 'https://www.hackerrank.com/rest/contests/master/challenges/$3/compile_tests'	\
 	--request POST 									\
 	-H 'Content-Type: application/json' 						\
 	-H 'Cookie: $COOKIES'								\
@@ -134,7 +134,7 @@ except Exception:
 		if [[ $CODE -ne 0 ]]; then
 			return $CODE
 		elif [[ ${#MODE} -gt 0 ]]; then
-			get $MODE $4 'compile_tests'
+			get $MODE $3 'compile_tests'
 			return $?
 		else
 			return -2
@@ -146,13 +146,13 @@ except Exception:
 
 function submit() {
 	LANG=$2
-	PLAYLIST=$3
+	PLAYLIST=$4
 
 	if [[ ${#COOKIES} -ne 0 ]]; then
 		SUBMIT_TEMPFILE=$(mktemp /tmp/hackerrank_submit.XXXXXX)
 
 		cat > $SUBMIT_TEMPFILE << EOF
-curl -sS 'https://www.hackerrank.com/rest/contests/master/challenges/$4/submissions' 	\
+curl -sS 'https://www.hackerrank.com/rest/contests/master/challenges/$3/submissions' 	\
 	--request POST 									\
 	-H 'Content-Type: application/json' 						\
 	-H 'Accept: application/json' 							\
@@ -176,7 +176,7 @@ except Exception:
 		if [[ $CODE -ne 0 ]]; then	
 			return $CODE
 		else
-			get $MODE $4 'submissions'
+			get $MODE $3 'submissions'
 			return $?
 		fi
 	else

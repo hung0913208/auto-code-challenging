@@ -15,13 +15,25 @@ if [ -d $ROOT/Tests/Hackerrank ]; then
 		for CHALLENGE in $(ls -1c $ROOT/Tests/Hackerrank/$PLAYLIST); do
 			info "Verify test cases of $PLAYLIST/$CHALLENGE:"
 
-			for TEST in $(ls -1c $ROOT/Tests/Hackerrank/$PLAYLIST/$CHALLENGE); do
-				if ! run $ROOT/Tests/Hackerrank/$PLAYLIST/$CHALLENGE/$TEST $(language $TEST) $PLAYLIST $CHALLENGE; then
-					error "fail test case Hackerrank/$PLAYLIST/$CHALLENGE/$TEST"
-				elif ! submit $ROOT/Tests/Hackerrank/$PLAYLIST/$CHALLENGE/$TEST $(language $TEST) $PLAYLIST $CHALLENGE; then
-					error "fail test case Hackerrank/$PLAYLIST/$CHALLENGE/$TEST"
-				fi
-			done
+			if [ -d $ROOT/Tests/Hackerrank/$PLAYLIST/$CHALLENGE ]; then
+				for TEST in $(ls -1c $ROOT/Tests/Hackerrank/$PLAYLIST/$CHALLENGE); do
+					if ! run $ROOT/Tests/Hackerrank/$PLAYLIST/$CHALLENGE/$TEST $(language $TEST) $CHALLENGE $PLAYLIST; then
+						error "fail test case Hackerrank/$PLAYLIST/$CHALLENGE/$TEST"
+					elif ! submit $ROOT/Tests/Hackerrank/$PLAYLIST/$CHALLENGE/$TEST $(language $TEST) $CHALLENGE $PLAYLIST; then
+						error "fail test case Hackerrank/$PLAYLIST/$CHALLENGE/$TEST"
+					fi
+				done
+			else
+				CHALLENGE=$PLAYLIST
+
+				for TEST in $(ls -1c $ROOT/Tests/Hackerrank/$CHALLENGE); do
+					if ! run $ROOT/Tests/Hackerrank/$CHALLENGE/$TEST $(language $TEST) $CHALLENGE; then
+						error "fail test case Hackerrank/$CHALLENGE/$TEST"
+					elif ! submit $ROOT/Tests/Hackerrank/$PLAYLIST/$CHALLENGE/$TEST $(language $TEST) $CHALLENGE; then
+						error "fail test case Hackerrank/$CHALLENGE/$TEST"
+					fi
+				done
+			fi
 		done
 	done
 fi
