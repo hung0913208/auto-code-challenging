@@ -1,7 +1,7 @@
 #!/bin/bash
 
-COOKIES=$HRANK_UUID
-TOKEN=$HRANK_TOKEN
+export COOKIES=$HRANK_UUID
+export TOKEN=$HRANK_TOKEN
 
 ROOT=$(git rev-parse --show-toplevel)
 
@@ -26,17 +26,20 @@ EOF
 			bash $GET_TEMPFILE | python -c """
 from json import load
 from sys import stdin, exit
+from pprint import pprint
 
 try:
 	metadata = load(stdin)['model']
 
 	if 'compilemessage' in metadata and len(metadata['compilemessage']) > 0:
 		print('compile error: %s' % metadata['compilemessage'])
+		exit(2)
 	elif metadata['status'] in ['Accepted', 1]:
-		error = metadata.get('stderr')
+		errors = metadata.get('stderr')
 		inputs = metadata.get('stdin')
 		outputs = metadata.get('stdout')
-		expects = metadata.get('testcase_status')
+		debugs = metadata.get('stdout_debug')
+		expects = metadata.get('expected_output')
 		passed = True
 
 		if 'status_string' in metadata:
@@ -65,7 +68,16 @@ try:
 					print('{}'.format(outputs[idx]))
 					print('----------------------------')
 					print('')
-				
+				if debugs:
+					print('Your debug output:')
+					print('{}'.format(debugs[idx]))
+					print('----------------------------')
+					print('')
+				if errors:
+					print('Your error console:')
+					print('{}'.format(errors[idx]))
+					print('----------------------------')
+					print('')
 				if expects:	
 					print('We expect it should be:')
 					print('----------------------------')
@@ -107,32 +119,10 @@ function run() {
 	PLAYLIST=$4
 
 	if [[ ${#COOKIES} -ne 0 ]]; then
-		RUN_TEMPFILE=$(mktemp /tmp/hackerrank_run.XXXXXX)
-
-		cat > $RUN_TEMPFILE << EOF
-curl -sS 'https://www.hackerrank.com/rest/contests/master/challenges/$3/compile_tests'	\
-	--request POST 									\
-	-H 'Content-Type: application/json' 						\
-	-H 'Cookie: $COOKIES'								\
-	-H 'X-CSRF-Token: $TOKEN'							\
-	-H 'Accept: application/json' 							\
-	--data-binary '{"code": "$($ROOT/Tools/Utilities/source_code_converting.py $1)", "language":"$LANG","contest_slug":"master","playlist_slug":"$PLAYLIST"}'
-EOF
-
-		MODE=$(bash $RUN_TEMPFILE | python -c """
-from json import load
-from sys import stdin, exit
-
-try:
-	print(load(stdin)['model']['id'])
-except Exception:
-	exit(-1)
-""")
-		CODE=$?
-		rm -fr $RUN_TEMPFILE
-
-		if [[ $CODE -ne 0 ]]; then
-			return $CODE
+		MODE=$($ROOT/Tools/Utilities/send_source_code_to_hackerrank.py $1 $LANG $3 "compile_tests" $PLAYLIST)
+	
+		if [[ $? -ne 0 ]]; then
+			return $?
 		elif [[ ${#MODE} -gt 0 ]]; then
 			get $MODE $3 'compile_tests'
 			return $?
@@ -149,32 +139,10 @@ function submit() {
 	PLAYLIST=$4
 
 	if [[ ${#COOKIES} -ne 0 ]]; then
-		SUBMIT_TEMPFILE=$(mktemp /tmp/hackerrank_submit.XXXXXX)
+		MODE=$($ROOT/Tools/Utilities/send_source_code_to_hackerrank.py $1 $LANG $3 "submissions" $PLAYLIST)
 
-		cat > $SUBMIT_TEMPFILE << EOF
-curl -sS 'https://www.hackerrank.com/rest/contests/master/challenges/$3/submissions' 	\
-	--request POST 									\
-	-H 'Content-Type: application/json' 						\
-	-H 'Accept: application/json' 							\
-	-H 'Cookie: $COOKIES' 								\
-	-H 'X-CSRF-Token: $TOKEN'							\
-	--data-binary '{"code": "$($ROOT/Tools/Utilities/source_code_converting.py $1)", "language":"$LANG","contest_slug":"master","playlist_slug":"$PLAYLIST"}'
-EOF
-
-		MODE=$(bash $SUBMIT_TEMPFILE | python -c """
-from json import load
-from sys import stdin, exit
-
-try:
-	print(load(stdin)['model']['id'])
-except Exception:
-	exit(-1)
-""")
-		CODE=$?
-		rm -fr $SUBMIT_TEMPFILE
-		
-		if [[ $CODE -ne 0 ]]; then	
-			return $CODE
+		if [[ $? -ne 0 ]]; then	
+			return $?
 		else
 			get $MODE $3 'submissions'
 			return $?
