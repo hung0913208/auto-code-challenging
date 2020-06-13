@@ -2,7 +2,7 @@
 
 import sys, os
 import json
-import urllib2
+import requests
 
 if os.path.exists(sys.argv[1]):
     with open(sys.argv[1]) as fd:
@@ -18,6 +18,15 @@ if os.path.exists(sys.argv[1]):
 else:
     sys.exit(-1)
 
+url = 'https://www.hackerrank.com/rest/contests/master/challenges/{}/{}'.format(
+            sys.argv[3], sys.argv[4])
+headers = {
+    'X-CSRF-Token': os.environ.get('TOKEN') or '',
+    'Cookie': os.environ.get('COOKIES') or '',
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+}
+
 data = {
     'code': raw,
     'language': sys.argv[2],
@@ -25,17 +34,11 @@ data = {
     'playlist_slug': sys.argv[5] if len(sys.argv) > 5 else ''
 }
 
-req = urllib2.Request('https://www.hackerrank.com/rest/contests/master/challenges/{}/{}'.format(sys.argv[3], sys.argv[4]))
-req.add_header('X-CSRF-Token', os.environ.get('TOKEN') or '')
-req.add_header('Cookie', os.environ.get('COOKIES') or '')
-req.add_header('Accept', 'application/json')
-req.add_header('Content-Type', 'application/json')
+resp = requests.post(url, json=data, headers=headers)
 
-resp = urllib2.urlopen(req, json.dumps(data))
-
-if resp.code == 200:
+if resp.status_code == 200:
     try:
-	    print(json.loads(resp.read())['model']['id'])
+	    print(resp.json()['model']['id'])
     except Exception:
 	    sys.exit(-1)
 else:
